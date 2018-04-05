@@ -37,6 +37,7 @@
         "doctrine/annotations": "^1.2",
         "doctrine/doctrine-bundle": "^1.8",
         "doctrine/orm": "^2.5.2",
+        "elasticsearch/elasticsearch": "^6.0",
         "friendsofsymfony/user-bundle": "^2.1",
         "guzzlehttp/guzzle": "^6.0",
         "justinrainbow/json-schema": "^5.0",
@@ -74,6 +75,7 @@
         "symfony/dependency-injection": "<3.4"
     },
     "suggest": {
+        "elasticsearch/elasticsearch": "To support Elasticsearch.",
         "friendsofsymfony/user-bundle": "To use the FOSUserBundle bridge.",
         "guzzlehttp/guzzle": "To use the HTTP cache invalidation system.",
         "phpdocumentor/reflection-docblock": "To support extracting metadata from PHPDoc.",
