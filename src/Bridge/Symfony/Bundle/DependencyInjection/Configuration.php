@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Core\Bridge\Symfony\Bundle\DependencyInjection;
 
+use ApiPlatform\Core\Bridge\Elasticsearch\Metadata\DocumentMetadata;
 use ApiPlatform\Core\Exception\FilterValidationException;
 use ApiPlatform\Core\Exception\InvalidArgumentException;
 use FOS\UserBundle\FOSUserBundle;
@@ -211,6 +212,27 @@ final class Configuration implements ConfigurationInterface
                                         ->thenInvalid('The request_options parameter must be an array.')
                                     ->end()
                                     ->info('To pass options to the client charged with the request.')
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+
+                ->arrayNode('elasticsearch')
+                    ->canBeEnabled()
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('host')
+                            ->isRequired()
+                            ->cannotBeEmpty()
+                        ->end()
+                        ->arrayNode('mapping')
+                            ->normalizeKeys(false)
+                            ->useAttributeAsKey('resource_class')
+                            ->prototype('array')
+                                ->children()
+                                    ->scalarNode('index')->defaultNull()->end()
+                                    ->scalarNode('type')->defaultValue(DocumentMetadata::DEFAULT_TYPE)->end()
                                 ->end()
                             ->end()
                         ->end()
