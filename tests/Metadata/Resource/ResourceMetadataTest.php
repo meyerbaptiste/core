@@ -77,15 +77,21 @@ class ResourceMetadataTest extends TestCase
     public function testWithMethods(string $name, $value)
     {
         $metadata = new ResourceMetadata();
-        $newMetadata = call_user_func([$metadata, "with$name"], $value);
+        $newMetadata = \call_user_func([$metadata, "with$name"], $value);
         $this->assertNotSame($metadata, $newMetadata);
-        $this->assertSame($value, call_user_func([$newMetadata, "get$name"]));
+        $this->assertSame($value, \call_user_func([$newMetadata, "get$name"]));
     }
 
     public function testGetOperationAttributeFallback()
     {
         $metadata = new ResourceMetadata();
-        $this->assertSame($metadata->getOperationAttribute([], 'doh', 'okay'), 'okay');
+        $this->assertSame('okay', $metadata->getOperationAttribute([], 'doh', 'okay'));
+    }
+
+    public function testGetOperationAttributeFallbackToResourceAttribute()
+    {
+        $metadata = new ResourceMetadata(null, null, null, null, null, ['doh' => 'nuts']);
+        $this->assertSame('nuts', $metadata->getOperationAttribute([], 'doh', 'okay', true));
     }
 
     public function getWithMethods(): array

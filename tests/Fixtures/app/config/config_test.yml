@@ -65,12 +65,12 @@ api_platform:
         shared_max_age: 3600
         vary:           ['Accept', 'Cookie']
         public:         true
+    mapping:
+        paths: ['%kernel.project_dir%/config/api_platform']
 
 fos_user:
     db_driver:        'orm'
     firewall_name:    'api'
-    service:
-        user_manager: 'app.user_manager'
     user_class:       'ApiPlatform\Core\Tests\Fixtures\TestBundle\Entity\User'
     from_email:
         address:      'no-reply@les-tilleuls.coop'
@@ -95,19 +95,18 @@ services:
         tags:
             -  { name: 'api_platform.item_data_provider' }
 
+    resource_interface.data_provider:
+        class: 'ApiPlatform\Core\Tests\Fixtures\TestBundle\DataProvider\ResourceInterfaceImplementationDataProvider'
+        public: false
+        tags:
+            -  { name: 'api_platform.item_data_provider' }
+            -  { name: 'api_platform.collection_data_provider' }
+
     app.serializer.denormalizer.serializable_resource:
         class: 'ApiPlatform\Core\Tests\Fixtures\TestBundle\Serializer\Denormalizer\SerializableResourceDenormalizer'
         public: false
         tags:
             -  { name: 'serializer.normalizer' }
-
-    app.user_manager:
-        class: 'ApiPlatform\Core\Tests\Fixtures\TestBundle\Manager\UserManager'
-        arguments:
-            -  '@fos_user.util.password_updater'
-            -  '@fos_user.util.canonical_fields_updater'
-            -  '@fos_user.object_manager'
-            -  '%fos_user.model.user.class%'
 
     fos_user.mailer.default:
         class: 'ApiPlatform\Core\Tests\Mock\FosUser\MailerMock'
@@ -237,4 +236,8 @@ services:
 
     test.annotation_reader:
         alias: annotation_reader
+        public: true
+
+    app.dummy_validation.group_generator:
+        class: ApiPlatform\Core\Tests\Fixtures\TestBundle\Validator\DummyValidationGroupsGenerator
         public: true

@@ -16,7 +16,9 @@ namespace ApiPlatform\Core\Tests\Bridge\Doctrine\Orm;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Extension\QueryResultCollectionExtensionInterface;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\SubresourceDataProvider;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Util\QueryNameGeneratorInterface;
-use ApiPlatform\Core\Identifier\Normalizer\ChainIdentifierDenormalizer;
+use ApiPlatform\Core\Exception\ResourceClassNotSupportedException;
+use ApiPlatform\Core\Exception\RuntimeException;
+use ApiPlatform\Core\Identifier\IdentifierConverterInterface;
 use ApiPlatform\Core\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
 use ApiPlatform\Core\Metadata\Property\Factory\PropertyNameCollectionFactoryInterface;
 use ApiPlatform\Core\Metadata\Property\PropertyMetadata;
@@ -97,12 +99,11 @@ class SubresourceDataProviderTest extends TestCase
         return $managerRegistryProphecy->reveal();
     }
 
-    /**
-     * @expectedException \ApiPlatform\Core\Exception\ResourceClassNotSupportedException
-     * @expectedExceptionMessage The given resource class is not a subresource.
-     */
     public function testNotASubresource()
     {
+        $this->expectException(ResourceClassNotSupportedException::class);
+        $this->expectExceptionMessage('The given resource class is not a subresource.');
+
         $identifiers = ['id'];
         list($propertyNameCollectionFactory, $propertyMetadataFactory) = $this->getMetadataProphecies([Dummy::class => $identifiers]);
         $queryBuilder = $this->prophesize(QueryBuilder::class)->reveal();
@@ -165,7 +166,7 @@ class SubresourceDataProviderTest extends TestCase
 
         $dataProvider = new SubresourceDataProvider($managerRegistryProphecy->reveal(), $propertyNameCollectionFactory, $propertyMetadataFactory);
 
-        $context = ['property' => 'relatedDummies', 'identifiers' => [['id', Dummy::class]], 'collection' => true, ChainIdentifierDenormalizer::HAS_IDENTIFIER_DENORMALIZER => true];
+        $context = ['property' => 'relatedDummies', 'identifiers' => [['id', Dummy::class]], 'collection' => true, IdentifierConverterInterface::HAS_IDENTIFIER_CONVERTER => true];
 
         $this->assertEquals([], $dataProvider->getSubresource(RelatedDummy::class, ['id' => ['id' => 1]], $context));
     }
@@ -232,7 +233,7 @@ class SubresourceDataProviderTest extends TestCase
 
         $managerRegistryProphecy->getManagerForClass(RelatedDummy::class)->shouldBeCalled()->willReturn($rDummyManagerProphecy->reveal());
 
-        $result = new \StdClass();
+        $result = new \stdClass();
         // Origin manager (ThirdLevel)
         $queryProphecy = $this->prophesize(AbstractQuery::class);
         $queryProphecy->getOneOrNullResult()->shouldBeCalled()->willReturn($result);
@@ -257,7 +258,7 @@ class SubresourceDataProviderTest extends TestCase
 
         $dataProvider = new SubresourceDataProvider($managerRegistryProphecy->reveal(), $propertyNameCollectionFactory, $propertyMetadataFactory);
 
-        $context = ['property' => 'thirdLevel', 'identifiers' => [['id', Dummy::class], ['relatedDummies', RelatedDummy::class]], 'collection' => false, ChainIdentifierDenormalizer::HAS_IDENTIFIER_DENORMALIZER => true];
+        $context = ['property' => 'thirdLevel', 'identifiers' => [['id', Dummy::class], ['relatedDummies', RelatedDummy::class]], 'collection' => false, IdentifierConverterInterface::HAS_IDENTIFIER_CONVERTER => true];
 
         $this->assertEquals($result, $dataProvider->getSubresource(ThirdLevel::class, ['id' => ['id' => 1], 'relatedDummies' => ['id' => 1]], $context));
     }
@@ -316,17 +317,16 @@ class SubresourceDataProviderTest extends TestCase
 
         $dataProvider = new SubresourceDataProvider($managerRegistryProphecy->reveal(), $propertyNameCollectionFactory, $propertyMetadataFactory, [$extensionProphecy->reveal()]);
 
-        $context = ['property' => 'relatedDummies', 'identifiers' => [['id', Dummy::class]], 'collection' => true, ChainIdentifierDenormalizer::HAS_IDENTIFIER_DENORMALIZER => true];
+        $context = ['property' => 'relatedDummies', 'identifiers' => [['id', Dummy::class]], 'collection' => true, IdentifierConverterInterface::HAS_IDENTIFIER_CONVERTER => true];
 
         $this->assertEquals([], $dataProvider->getSubresource(RelatedDummy::class, ['id' => ['id' => 1]], $context));
     }
 
-    /**
-     * @expectedException \ApiPlatform\Core\Exception\RuntimeException
-     * @expectedExceptionMessage The repository class must have a "createQueryBuilder" method.
-     */
     public function testCannotCreateQueryBuilder()
     {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The repository class must have a "createQueryBuilder" method.');
+
         $identifiers = ['id'];
         $repositoryProphecy = $this->prophesize(ObjectRepository::class);
 
@@ -342,11 +342,10 @@ class SubresourceDataProviderTest extends TestCase
         $dataProvider->getSubresource(Dummy::class, ['id' => 1], []);
     }
 
-    /**
-     * @expectedException \ApiPlatform\Core\Exception\ResourceClassNotSupportedException
-     */
     public function testThrowResourceClassNotSupportedException()
     {
+        $this->expectException(ResourceClassNotSupportedException::class);
+
         $identifiers = ['id'];
         $managerRegistryProphecy = $this->prophesize(ManagerRegistry::class);
         $managerRegistryProphecy->getManagerForClass(Dummy::class)->willReturn(null)->shouldBeCalled();
@@ -426,7 +425,7 @@ class SubresourceDataProviderTest extends TestCase
 
         $managerRegistryProphecy->getManagerForClass(RelatedDummy::class)->shouldBeCalled()->willReturn($rDummyManagerProphecy->reveal());
 
-        $result = new \StdClass();
+        $result = new \stdClass();
         // Origin manager (ThirdLevel)
         $queryProphecy = $this->prophesize(AbstractQuery::class);
         $queryProphecy->getOneOrNullResult()->shouldBeCalled()->willReturn($result);
@@ -518,7 +517,7 @@ class SubresourceDataProviderTest extends TestCase
 
         $managerRegistryProphecy->getManagerForClass(RelatedDummy::class)->shouldBeCalled()->willReturn($rDummyManagerProphecy->reveal());
 
-        $result = new \StdClass();
+        $result = new \stdClass();
         $queryProphecy = $this->prophesize(AbstractQuery::class);
         $queryProphecy->getOneOrNullResult()->shouldBeCalled()->willReturn($result);
 
@@ -539,7 +538,7 @@ class SubresourceDataProviderTest extends TestCase
 
         $dataProvider = new SubresourceDataProvider($managerRegistryProphecy->reveal(), $propertyNameCollectionFactory, $propertyMetadataFactory);
 
-        $context = ['property' => 'id', 'identifiers' => [['id', Dummy::class, true], ['relatedDummies', RelatedDummy::class, true]], 'collection' => false, ChainIdentifierDenormalizer::HAS_IDENTIFIER_DENORMALIZER => true];
+        $context = ['property' => 'id', 'identifiers' => [['id', Dummy::class, true], ['relatedDummies', RelatedDummy::class, true]], 'collection' => false, IdentifierConverterInterface::HAS_IDENTIFIER_CONVERTER => true];
 
         $this->assertEquals($result, $dataProvider->getSubresource(RelatedDummy::class, ['id' => ['id' => 1], 'relatedDummies' => ['id' => 2]], $context));
     }

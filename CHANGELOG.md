@@ -1,5 +1,50 @@
 # Changelog
 
+## 2.3.0
+
+* Add support for deprecating resources, operations and fields in GraphQL, Hydra and Swagger
+* Add API Platform panels in the Symfony profiler and in the web debug toolbar
+* Make resource class's constructor parameters writable
+* Add support for interface as a resource
+* Add a shortcut syntax to define attributes at the root of `@ApiResource` and `@ApiProperty` annotations
+* Throw an exception if a required filter isn't set
+* Allow to specify the message when access is denied using the `access_control_message` attribute
+* Add a new option to include null results when using the date filter
+* Allow data persisters to return a new instance instead of mutating the existing one
+* Add a new attribute to configure specific formats per resources or operations
+* Add an `--output` option to the `api:swagger:export` command
+* Implement the `CacheableSupportsMethodInterface` introduced in Symfony 4.1 in all (de)normalizers (improves the performance dramatically)
+* Drop support for PHP 7.0
+* Upgrade Swagger UI and GraphiQL
+* GraphQL: Add a `totalCount` field in GraphQL paginated collections
+* JSONAPI: Allow inclusion of related resources
+
+## 2.2.9
+
+* Fix `ExistsFilter` for inverse side of OneToOne association
+* Fix to not populate subresource inverse side
+* Improve the overall code quality (PHPStan analysis)
+
+## 2.2.8
+
+* Fix support for max depth when using subresources
+* Fix a fatal error when a subresource type is not defined
+* Add support for group sequences in the validator configuration
+* Add a local class metadata cache in the HAL normalizer
+* `FilterEagerLoadingExtension` now accepts joins with class name as join value
+
+## 2.2.7
+
+* Compatibility with Symfony 4.1
+* Compatibility with webonyx/graphql-php 0.12
+* Add missing `ApiPlatform\Core\EventListener\EventPriorities`'s `PRE_SERIALIZE` and `POST_SERIALIZE` constants
+* Disable eager loading when no groups are specified to avoid recursive joins
+* Fix embeddable entities eager loading with groups
+* Don't join the same association twice when eager loading
+* Fix max depth handling when using HAL
+* Check the value of `enable_max_depth` if defined
+* Minor performance and quality improvements
+
 ## 2.2.6
 
 * Fix identifiers creation and update when using GraphQL

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace ApiPlatform\Core\Tests\Annotation;
 
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Exception\InvalidArgumentException;
 use ApiPlatform\Core\Tests\Fixtures\AnnotatedClass;
 use Doctrine\Common\Annotations\AnnotationReader;
 use PHPUnit\Framework\TestCase;
@@ -34,6 +35,7 @@ class ApiResourceTest extends TestCase
             'description' => 'description',
             'fetchPartial' => true,
             'forceEager' => false,
+            'formats' => ['foo', 'bar' => ['application/bar']],
             'filters' => ['foo', 'bar'],
             'graphql' => ['query' => ['normalization_context' => ['groups' => ['foo', 'bar']]]],
             'iri' => 'http://example.com/res',
@@ -68,6 +70,7 @@ class ApiResourceTest extends TestCase
             'fetch_partial' => true,
             'foo' => 'bar',
             'force_eager' => false,
+            'formats' => ['foo', 'bar' => ['application/bar']],
             'filters' => ['foo', 'bar'],
             'maximum_items_per_page' => 42,
             'normalization_context' => ['groups' => ['bar']],
@@ -87,6 +90,9 @@ class ApiResourceTest extends TestCase
     public function testApiResourceAnnotation()
     {
         $reader = new AnnotationReader();
+        /**
+         * @var ApiResource
+         */
         $resource = $reader->getClassAnnotation(new \ReflectionClass(AnnotatedClass::class), ApiResource::class);
 
         $this->assertSame('shortName', $resource->shortName);
@@ -102,12 +108,11 @@ class ApiResourceTest extends TestCase
         ], $resource->attributes);
     }
 
-    /**
-     * @expectedException \ApiPlatform\Core\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Unknown property "invalidAttribute" on annotation "ApiPlatform\Core\Annotation\ApiResource".
-     */
     public function testConstructWithInvalidAttribute()
     {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unknown property "invalidAttribute" on annotation "ApiPlatform\\Core\\Annotation\\ApiResource".');
+
         new ApiResource([
             'shortName' => 'shortName',
             'routePrefix' => '/foo',

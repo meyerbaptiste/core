@@ -15,7 +15,7 @@ namespace ApiPlatform\Core\DataProvider;
 
 use ApiPlatform\Core\Exception\InvalidIdentifierException;
 use ApiPlatform\Core\Exception\RuntimeException;
-use ApiPlatform\Core\Identifier\Normalizer\ChainIdentifierDenormalizer;
+use ApiPlatform\Core\Identifier\IdentifierConverterInterface;
 
 /**
  * @internal
@@ -33,14 +33,14 @@ trait OperationDataProviderTrait
     private $itemDataProvider;
 
     /**
-     * @var SubresourceDataProviderInterface
+     * @var SubresourceDataProviderInterface|null
      */
     private $subresourceDataProvider;
 
     /**
-     * @var ChainIdentifierDenormalizer
+     * @var IdentifierConverterInterface|null
      */
-    private $identifierDenormalizer;
+    private $identifierConverter;
 
     /**
      * Retrieves data for a collection operation.
@@ -55,8 +55,6 @@ trait OperationDataProviderTrait
     /**
      * Gets data for an item operation.
      *
-     * @throws NotFoundHttpException
-     *
      * @return object|null
      */
     private function getItemData($identifiers, array $attributes, array $context)
@@ -67,14 +65,13 @@ trait OperationDataProviderTrait
     /**
      * Gets data for a nested operation.
      *
-     * @throws NotFoundHttpException
      * @throws RuntimeException
      *
      * @return object|null
      */
     private function getSubresourceData($identifiers, array $attributes, array $context)
     {
-        if (!$this->subresourceDataProvider) {
+        if (null === $this->subresourceDataProvider) {
             throw new RuntimeException('Subresources not supported');
         }
 
@@ -95,8 +92,8 @@ trait OperationDataProviderTrait
 
             $id = $parameters['id'];
 
-            if ($this->identifierDenormalizer) {
-                return $this->identifierDenormalizer->denormalize((string) $id, $attributes['resource_class']);
+            if (null !== $this->identifierConverter) {
+                return $this->identifierConverter->convert((string) $id, $attributes['resource_class']);
             }
 
             return $id;
@@ -111,8 +108,8 @@ trait OperationDataProviderTrait
 
             $identifiers[$id] = $parameters[$id];
 
-            if ($this->identifierDenormalizer) {
-                $identifiers[$id] = $this->identifierDenormalizer->denormalize((string) $identifiers[$id], $resourceClass);
+            if (null !== $this->identifierConverter) {
+                $identifiers[$id] = $this->identifierConverter->convert((string) $identifiers[$id], $resourceClass);
             }
         }
 

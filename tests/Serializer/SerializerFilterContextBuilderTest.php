@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace ApiPlatform\Core\Tests\Serializer;
 
 use ApiPlatform\Core\Api\FilterInterface;
+use ApiPlatform\Core\Exception\RuntimeException;
 use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 use ApiPlatform\Core\Metadata\Resource\ResourceMetadata;
 use ApiPlatform\Core\Serializer\Filter\FilterInterface as SerializerFilterInterface;
@@ -153,6 +154,7 @@ class SerializerFilterContextBuilderTest extends TestCase
             'resource_class' => DummyGroup::class,
             'collection_operation_name' => 'get',
             'receive' => true,
+            'persist' => true,
         ];
 
         $resourceMetadata = new ResourceMetadata(
@@ -187,12 +189,11 @@ class SerializerFilterContextBuilderTest extends TestCase
         $this->assertInternalType('array', $context);
     }
 
-    /**
-     * @expectedException \ApiPlatform\Core\Exception\RuntimeException
-     * @expectedExceptionMessage Request attributes are not valid.
-     */
     public function testCreateFromRequestThrowsExceptionWithoutAttributesAndRequestAttributes()
     {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Request attributes are not valid.');
+
         $request = new Request();
 
         $resourceMetadataFactoryProphecy = $this->prophesize(ResourceMetadataFactoryInterface::class);
