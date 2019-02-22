@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Core\DataProvider;
 
+use ApiPlatform\Core\Api\FilterInterface;
 use ApiPlatform\Core\Exception\InvalidArgumentException;
 use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 
@@ -21,7 +22,7 @@ use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */
-final class Pagination
+final class Pagination implements FilterInterface
 {
     private $options;
     private $resourceMetadataFactory;
@@ -154,6 +155,26 @@ final class Pagination
     public function isPartialEnabled(string $resourceClass = null, string $operationName = null, array $context = []): bool
     {
         return $this->getEnabled($context, $resourceClass, $operationName, true);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getDescription(string $resourceClass): array
+    {
+        $description = [];
+
+        if (!$this->isEnabled($resourceClass)) {
+            return $description;
+        }
+
+        $description[$this->options['page_parameter_name']] = [
+            'property' => null,
+            'type' => 'int',
+            'required' => false
+        ];
+
+
     }
 
     /**

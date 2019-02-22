@@ -777,6 +777,7 @@ final class DocumentationNormalizer implements NormalizerInterface, CacheableSup
      * Gets parameters corresponding to enabled filters.
      */
     private function getFiltersParameters(bool $v3, string $resourceClass, string $operationName, ResourceMetadata $resourceMetadata, \ArrayObject $definitions, array $serializerContext = null): array
+    private function getFiltersParameters(bool $v3, string $resourceClass, string $operationName, ResourceMetadata $resourceMetadata, \ArrayObject $definitions, array $serializerContext = null): array
     {
         if (null === $this->filterLocator) {
             return [];
