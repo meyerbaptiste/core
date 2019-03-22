@@ -16,6 +16,8 @@ namespace ApiPlatform\Core\Bridge\Doctrine\Orm\Filter;
 use ApiPlatform\Core\Bridge\Doctrine\Common\PropertyHelperTrait;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\PropertyHelperTrait as OrmPropertyHelperTrait;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Util\QueryNameGeneratorInterface;
+use ApiPlatform\Core\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
+use ApiPlatform\Core\Metadata\Property\PropertyMetadataFactoryOptionsTrait;
 use ApiPlatform\Core\Util\RequestParser;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\QueryBuilder;
@@ -36,10 +38,12 @@ abstract class AbstractFilter implements FilterInterface
 {
     use PropertyHelperTrait;
     use OrmPropertyHelperTrait;
+    use PropertyMetadataFactoryOptionsTrait;
 
     protected $managerRegistry;
     protected $requestStack;
     protected $logger;
+    protected $propertyMetadataFactory;
     protected $properties;
 
     /**
@@ -55,6 +59,11 @@ abstract class AbstractFilter implements FilterInterface
         $this->requestStack = $requestStack;
         $this->logger = $logger ?? new NullLogger();
         $this->properties = $properties;
+    }
+
+    public function setPropertyMetadataFactory(PropertyMetadataFactoryInterface $propertyMetadataFactory): void
+    {
+        $this->propertyMetadataFactory = $propertyMetadataFactory;
     }
 
     /**
@@ -96,7 +105,7 @@ abstract class AbstractFilter implements FilterInterface
     /**
      * Determines whether the given property is enabled.
      */
-    protected function isPropertyEnabled(string $property/*, string $resourceClass*/): bool
+    protected function isPropertyEnabled(string $property/*, string $resourceClass, array $context = []*/): bool
     {
         if (\func_num_args() > 1) {
             $resourceClass = func_get_arg(1);
@@ -110,12 +119,28 @@ abstract class AbstractFilter implements FilterInterface
             $resourceClass = null;
         }
 
-        if (null === $this->properties) {
-            // to ensure sanity, nested properties must still be explicitly enabled
-            return !$this->isPropertyNested($property, $resourceClass);
+        if (\func_num_args() > 2) {
+            $context = func_get_arg(2);
+        } else {
+            if (__CLASS__ !== \get_class($this)) {
+                $r = new \ReflectionMethod($this, __FUNCTION__);
+                if (__CLASS__ !== $r->getDeclaringClass()->getName()) {
+                    @trigger_error(sprintf('Method %s() will have a third `$context` argument in version API Platform 3.0. Not defining it is deprecated since API Platform 2.4.', __FUNCTION__), E_USER_DEPRECATED);
+                }
+            }
+            $context = [];
         }
 
-        return \array_key_exists($property, $this->properties);
+        if (null !== $this->properties) {
+            return \array_key_exists($property, $this->properties);
+        }
+
+        if (null !== $resourceClass && null !== $this->propertyMetadataFactory && !$this->propertyMetadataFactory->create($resourceClass, $property, $this->getFactoryOptions($context))->isReadable()) {
+            return false;
+        }
+
+        // to ensure sanity, nested properties must still be explicitly enabled
+        return !$this->isPropertyNested($property, $resourceClass);
     }
 
     /**
