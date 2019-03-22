@@ -17,6 +17,7 @@ use ApiPlatform\Core\Exception\ResourceClassNotFoundException;
 use ApiPlatform\Core\Metadata\Property\PropertyMetadata;
 use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface as SerializerClassMetadataFactoryInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 /**
  * Populates read/write and link status using serialization groups.
@@ -51,9 +52,10 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
         }
 
         try {
-            list($normalizationGroups, $denormalizationGroups) = $this->getEffectiveSerializerGroups($options, $resourceClass);
+            [$normalizationIgnoredAttributes, $denormalizationIgnoredAttributes] = $this->getEffectiveSerializerOption(AbstractNormalizer::IGNORED_ATTRIBUTES, $options, $resourceClass);
+            [$normalizationGroups, $denormalizationGroups] = $this->getEffectiveSerializerOption(AbstractNormalizer::GROUPS, $options, $resourceClass);
 
-            $propertyMetadata = $this->transformReadWrite($propertyMetadata, $resourceClass, $property, $normalizationGroups, $denormalizationGroups);
+            $propertyMetadata = $this->transformReadWrite($propertyMetadata, $resourceClass, $property, $normalizationGroups, $denormalizationGroups, $normalizationIgnoredAttributes, $denormalizationIgnoredAttributes);
             $propertyMetadata = $this->transformLinkStatus($propertyMetadata, $normalizationGroups, $denormalizationGroups);
         } catch (ResourceClassNotFoundException $e) {
             // No need to check link status if related class is not a resource
@@ -71,8 +73,16 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
      * @param string[]|null $normalizationGroups
      * @param string[]|null $denormalizationGroups
      */
-    private function transformReadWrite(PropertyMetadata $propertyMetadata, string $resourceClass, string $propertyName, array $normalizationGroups = null, array $denormalizationGroups = null): PropertyMetadata
+    private function transformReadWrite(PropertyMetadata $propertyMetadata, string $resourceClass, string $propertyName, ?array $normalizationGroups = null, ?array $denormalizationGroups = null, ?array $normalizationIgnoredAttributes = null, ?array $denormalizationIgnoredAttributes = null): PropertyMetadata
     {
+        if (false !== $propertyMetadata->isReadable()) {
+            $propertyMetadata = $propertyMetadata->withReadable(null === $normalizationIgnoredAttributes || !\in_array($propertyName, $normalizationIgnoredAttributes, true));
+        }
+
+        if (false !== $propertyMetadata->isWritable()) {
+            $propertyMetadata = $propertyMetadata->withWritable(null === $denormalizationIgnoredAttributes || !\in_array($propertyName, $denormalizationIgnoredAttributes, true));
+        }
+
         $groups = $this->getPropertySerializerGroups($resourceClass, $propertyName);
 
         if (false !== $propertyMetadata->isReadable()) {
@@ -130,22 +140,22 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
     }
 
     /**
-     * Gets the effective serializer groups used in normalization/denormalization.
+     * Gets the effective serializer option used in normalization/denormalization.
      *
-     * Groups are extracted in the following order:
+     * Option is extracted in the following order:
      *
-     * - From the "serializer_groups" key of the $options array.
+     * - From the "serializer_<option_name>" key of the $options array.
      * - From metadata of the given operation ("collection_operation_name" and "item_operation_name" keys).
      * - From metadata of the current resource.
      *
      * @return (string[]|null)[]
      */
-    private function getEffectiveSerializerGroups(array $options, string $resourceClass): array
+    private function getEffectiveSerializerOption(string $optionName, array $options, string $resourceClass): array
     {
-        if (isset($options['serializer_groups'])) {
-            $groups = (array) $options['serializer_groups'];
+        if (isset($options["serializer_$optionName"])) {
+            $ignoredAttributes = (array) $options["serializer_$optionName"];
 
-            return [$groups, $groups];
+            return [$ignoredAttributes, $ignoredAttributes];
         }
 
         $resourceMetadata = $this->resourceMetadataFactory->create($resourceClass);
@@ -164,8 +174,8 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
         }
 
         return [
-            isset($normalizationContext['groups']) ? (array) $normalizationContext['groups'] : null,
-            isset($denormalizationContext['groups']) ? (array) $denormalizationContext['groups'] : null,
+            isset($normalizationContext[$optionName]) ? (array) $normalizationContext[$optionName] : null,
+            isset($denormalizationContext[$optionName]) ? (array) $denormalizationContext[$optionName] : null,
         ];
     }
 
