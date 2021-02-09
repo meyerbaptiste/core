@@ -19,6 +19,7 @@ use Doctrine\ODM\MongoDB\Aggregation\Builder;
 use Doctrine\ODM\MongoDB\Mapping\ClassMetadata;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 
 /**
@@ -40,9 +41,9 @@ final class ExistsFilter extends AbstractFilter implements ExistsFilterInterface
 {
     use ExistsFilterTrait;
 
-    public function __construct(ManagerRegistry $managerRegistry, LoggerInterface $logger = null, array $properties = null, string $existsParameterName = self::QUERY_PARAMETER_KEY, NameConverterInterface $nameConverter = null)
+    public function __construct(ManagerRegistry $managerRegistry, LoggerInterface $logger = null, array $properties = null, string $existsParameterName = self::QUERY_PARAMETER_KEY, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
     {
-        parent::__construct($managerRegistry, $logger, $properties, $nameConverter);
+        parent::__construct($managerRegistry, $logger, $properties, $nameConverter, $classMetadataFactory);
 
         $this->existsParameterName = $existsParameterName;
     }
@@ -60,7 +61,7 @@ final class ExistsFilter extends AbstractFilter implements ExistsFilterInterface
         }
 
         foreach ($context['filters'][$this->existsParameterName] as $property => $value) {
-            $this->filterProperty($this->denormalizePropertyName($property), $value, $aggregationBuilder, $resourceClass, $operationName, $context);
+            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass), $value, $aggregationBuilder, $resourceClass, $operationName, $context);
         }
     }
 

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace ApiPlatform\Core\Bridge\Doctrine\Orm\Filter;
 
 use ApiPlatform\Core\Bridge\Doctrine\Common\PropertyHelperTrait;
+use ApiPlatform\Core\Bridge\Doctrine\Common\Util\PropertyNameNormalizerTrait;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\PropertyHelperTrait as OrmPropertyHelperTrait;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Util\QueryNameGeneratorInterface;
 use ApiPlatform\Core\Util\RequestParser;
@@ -23,6 +24,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 
 /**
@@ -37,17 +39,23 @@ abstract class AbstractFilter implements FilterInterface
 {
     use OrmPropertyHelperTrait;
     use PropertyHelperTrait;
+    use PropertyNameNormalizerTrait;
 
     protected $managerRegistry;
     protected $requestStack;
     protected $logger;
     protected $properties;
     protected $nameConverter;
+    protected $classMetadataFactory;
 
-    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null)
+    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
     {
         if (null !== $requestStack) {
             @trigger_error(sprintf('Passing an instance of "%s" is deprecated since 2.2. Use "filters" context key instead.', RequestStack::class), \E_USER_DEPRECATED);
+        }
+
+        if (null === $classMetadataFactory) {
+            @trigger_error(sprintf('Not injecting "%s" is deprecated since API Platform 2.7 and can lead to unexpected behaviors, it will not be possible anymore in API Platform 3.0.', ClassMetadataFactoryInterface::class), \E_USER_DEPRECATED);
         }
 
         $this->managerRegistry = $managerRegistry;
@@ -55,6 +63,7 @@ abstract class AbstractFilter implements FilterInterface
         $this->logger = $logger ?? new NullLogger();
         $this->properties = $properties;
         $this->nameConverter = $nameConverter;
+        $this->classMetadataFactory = $classMetadataFactory;
     }
 
     /**
@@ -91,6 +100,16 @@ abstract class AbstractFilter implements FilterInterface
     protected function getLogger(): LoggerInterface
     {
         return $this->logger;
+    }
+
+    protected function getNameConverter(): ?NameConverterInterface
+    {
+        return $this->nameConverter;
+    }
+
+    protected function getClassMetadataFactory(): ?ClassMetadataFactoryInterface
+    {
+        return $this->classMetadataFactory;
     }
 
     /**
@@ -140,23 +159,5 @@ abstract class AbstractFilter implements FilterInterface
         }
 
         return $request->query->all();
-    }
-
-    protected function denormalizePropertyName($property)
-    {
-        if (!$this->nameConverter instanceof NameConverterInterface) {
-            return $property;
-        }
-
-        return implode('.', array_map([$this->nameConverter, 'denormalize'], explode('.', (string) $property)));
-    }
-
-    protected function normalizePropertyName($property)
-    {
-        if (!$this->nameConverter instanceof NameConverterInterface) {
-            return $property;
-        }
-
-        return implode('.', array_map([$this->nameConverter, 'normalize'], explode('.', (string) $property)));
     }
 }

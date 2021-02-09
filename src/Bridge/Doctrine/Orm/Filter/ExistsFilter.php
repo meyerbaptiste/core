@@ -24,6 +24,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 
 /**
@@ -42,9 +43,9 @@ class ExistsFilter extends AbstractContextAwareFilter implements ExistsFilterInt
 {
     use ExistsFilterTrait;
 
-    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, LoggerInterface $logger = null, array $properties = null, string $existsParameterName = self::QUERY_PARAMETER_KEY, NameConverterInterface $nameConverter = null)
+    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, LoggerInterface $logger = null, array $properties = null, string $existsParameterName = self::QUERY_PARAMETER_KEY, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
     {
-        parent::__construct($managerRegistry, $requestStack, $logger, $properties, $nameConverter);
+        parent::__construct($managerRegistry, $requestStack, $logger, $properties, $nameConverter, $classMetadataFactory);
 
         $this->existsParameterName = $existsParameterName;
     }
@@ -62,7 +63,7 @@ class ExistsFilter extends AbstractContextAwareFilter implements ExistsFilterInt
         }
 
         foreach ($context['filters'][$this->existsParameterName] as $property => $value) {
-            $this->filterProperty($this->denormalizePropertyName($property), $value, $queryBuilder, $queryNameGenerator, $resourceClass, $operationName, $context);
+            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass), $value, $queryBuilder, $queryNameGenerator, $resourceClass, $operationName, $context);
         }
     }
 

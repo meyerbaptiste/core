@@ -22,6 +22,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 
 /**
@@ -41,7 +42,7 @@ class OrderFilter extends AbstractContextAwareFilter implements OrderFilterInter
 {
     use OrderFilterTrait;
 
-    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, string $orderParameterName = 'order', LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null)
+    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, string $orderParameterName = 'order', LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
     {
         if (null !== $properties) {
             $properties = array_map(static function ($propertyOptions) {
@@ -56,7 +57,7 @@ class OrderFilter extends AbstractContextAwareFilter implements OrderFilterInter
             }, $properties);
         }
 
-        parent::__construct($managerRegistry, $requestStack, $logger, $properties, $nameConverter);
+        parent::__construct($managerRegistry, $requestStack, $logger, $properties, $nameConverter, $classMetadataFactory);
 
         $this->orderParameterName = $orderParameterName;
     }
@@ -77,7 +78,7 @@ class OrderFilter extends AbstractContextAwareFilter implements OrderFilterInter
         }
 
         foreach ($context['filters'][$this->orderParameterName] as $property => $value) {
-            $this->filterProperty($this->denormalizePropertyName($property), $value, $queryBuilder, $queryNameGenerator, $resourceClass, $operationName, $context);
+            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass), $value, $queryBuilder, $queryNameGenerator, $resourceClass, $operationName, $context);
         }
     }
 
