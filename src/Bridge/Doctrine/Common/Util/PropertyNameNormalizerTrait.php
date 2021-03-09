@@ -21,8 +21,6 @@ trait PropertyNameNormalizerTrait
 {
     abstract protected function getNameConverter(): ?NameConverterInterface;
 
-    abstract protected function getClassMetadataFactory(): ?ClassMetadataFactoryInterface;
-
     abstract protected function getClassMetadata(string $resourceClass): ClassMetadata;
 
     /**
@@ -30,7 +28,7 @@ trait PropertyNameNormalizerTrait
      *
      * @return string
      */
-    protected function denormalizePropertyName($property/*, string $resourceClass = null*/)
+    protected function denormalizePropertyName($property/*, string $resourceClass = null, array $context = []*/)
     {
         if (\func_num_args() > 1) {
             $resourceClass = null === ($arg = func_get_arg(1)) ? $arg : (string) $arg;
@@ -45,27 +43,34 @@ trait PropertyNameNormalizerTrait
             $resourceClass = null;
         }
 
-        $nameConverter = $this->getNameConverter();
+        if (\func_num_args() > 2) {
+            $context = func_get_arg(2);
+        } else {
+            if (__CLASS__ !== static::class) {
+                $r = new \ReflectionMethod($this, __FUNCTION__);
+                if (__CLASS__ !== $r->getDeclaringClass()->getName()) {
+                    @trigger_error(sprintf('Method %s() will have a third `$context` argument in version API Platform 3.0. Not defining it is deprecated since API Platform 2.7.', __FUNCTION__), \E_USER_DEPRECATED);
+                }
+            }
+
+            $context = [];
+        }
+
+        if (!$nameConverter = $this->getNameConverter()) {
+            return $property;
+        }
+
         $denormalizedProperties = [];
-
         foreach (explode('.', (string) $property) as $subProperty) {
-            if ($nameConverter) {
-                $subProperty = $nameConverter->denormalize($subProperty);
-            }
+            $denormalizedProperty = $nameConverter->denormalize($subProperty, $resourceClass, null, $context);
 
-            if (null === $resourceClass) {
-                $denormalizedProperties[] = $subProperty;
-
-                continue;
-            }
-
-            $denormalizedProperties[] = $this->getSerializedOriginalAttributeName($resourceClass, $subProperty);
-
-            if (($doctrineClassMetadata = $this->getClassMetadata($resourceClass))->hasAssociation($subProperty)) {
-                $resourceClass = $doctrineClassMetadata->getAssociationTargetClass($subProperty);
+            if (null !== $resourceClass && ($doctrineClassMetadata = $this->getClassMetadata($resourceClass))->hasAssociation($denormalizedProperty)) {
+                $resourceClass = $doctrineClassMetadata->getAssociationTargetClass($denormalizedProperty);
             } else {
                 $resourceClass = null;
             }
+
+            $denormalizedProperties[] = $denormalizedProperty;
         }
 
         return implode('.', $denormalizedProperties);
@@ -76,7 +81,7 @@ trait PropertyNameNormalizerTrait
      *
      * @return string
      */
-    protected function normalizePropertyName($property/*, string $resourceClass = null*/)
+    protected function normalizePropertyName($property/*, string $resourceClass = null, array $context = []*/)
     {
         if (\func_num_args() > 1) {
             $resourceClass = null === ($arg = func_get_arg(1)) ? $arg : (string) $arg;
@@ -91,19 +96,26 @@ trait PropertyNameNormalizerTrait
             $resourceClass = null;
         }
 
-        $nameConverter = $this->getNameConverter();
+        if (\func_num_args() > 2) {
+            $context = func_get_arg(2);
+        } else {
+            if (__CLASS__ !== static::class) {
+                $r = new \ReflectionMethod($this, __FUNCTION__);
+                if (__CLASS__ !== $r->getDeclaringClass()->getName()) {
+                    @trigger_error(sprintf('Method %s() will have a third `$context` argument in version API Platform 3.0. Not defining it is deprecated since API Platform 2.7.', __FUNCTION__), \E_USER_DEPRECATED);
+                }
+            }
+
+            $context = [];
+        }
+
+        if (!$nameConverter = $this->getNameConverter()) {
+            return $property;
+        }
+
         $normalizedProperties = [];
-
         foreach (explode('.', (string) $property) as $subProperty) {
-            $normalizedProperty = $subProperty;
-
-            if (null !== $resourceClass) {
-                $normalizedProperty = $this->getSerializedAttributeName($resourceClass, $subProperty);
-            }
-
-            if ($nameConverter) {
-                $normalizedProperty = $nameConverter->normalize($normalizedProperty);
-            }
+            $normalizedProperty = $nameConverter->normalize($subProperty, $resourceClass, null, $context);
 
             if (null !== $resourceClass && ($doctrineClassMetadata = $this->getClassMetadata($resourceClass))->hasAssociation($subProperty)) {
                 $resourceClass = $doctrineClassMetadata->getAssociationTargetClass($subProperty);
@@ -115,35 +127,5 @@ trait PropertyNameNormalizerTrait
         }
 
         return implode('.', $normalizedProperties);
-    }
-
-    private function getSerializedAttributeName(string $resourceClass, string $originalName): string
-    {
-        if (!($classMetadataFactory = $this->getClassMetadataFactory()) || !$classMetadataFactory->hasMetadataFor($resourceClass)) {
-            return $originalName;
-        }
-
-        $attributesMetadata = $classMetadataFactory->getMetadataFor($resourceClass)->getAttributesMetadata();
-
-        if (isset($attributesMetadata[$originalName]) && null !== $serializedName = $attributesMetadata[$originalName]->getSerializedName()) {
-            return $serializedName;
-        }
-
-        return $originalName;
-    }
-
-    private function getSerializedOriginalAttributeName(string $resourceClass, string $serializedName): string
-    {
-        if (!($classMetadataFactory = $this->getClassMetadataFactory()) || !$classMetadataFactory->hasMetadataFor($resourceClass)) {
-            return $serializedName;
-        }
-
-        foreach ($classMetadataFactory->getMetadataFor($resourceClass)->getAttributesMetadata() as $attributeMetadata) {
-            if ($serializedName === $attributeMetadata->getSerializedName()) {
-                return $attributeMetadata->getName();
-            }
-        }
-
-        return $serializedName;
     }
 }

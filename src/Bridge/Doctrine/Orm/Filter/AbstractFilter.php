@@ -46,16 +46,11 @@ abstract class AbstractFilter implements FilterInterface
     protected $logger;
     protected $properties;
     protected $nameConverter;
-    protected $classMetadataFactory;
 
-    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
+    public function __construct(ManagerRegistry $managerRegistry, ?RequestStack $requestStack = null, LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null)
     {
         if (null !== $requestStack) {
             @trigger_error(sprintf('Passing an instance of "%s" is deprecated since 2.2. Use "filters" context key instead.', RequestStack::class), \E_USER_DEPRECATED);
-        }
-
-        if (null === $classMetadataFactory) {
-            @trigger_error(sprintf('Not injecting "%s" is deprecated since API Platform 2.7 and can lead to unexpected behaviors, it will not be possible anymore in API Platform 3.0.', ClassMetadataFactoryInterface::class), \E_USER_DEPRECATED);
         }
 
         $this->managerRegistry = $managerRegistry;
@@ -63,7 +58,6 @@ abstract class AbstractFilter implements FilterInterface
         $this->logger = $logger ?? new NullLogger();
         $this->properties = $properties;
         $this->nameConverter = $nameConverter;
-        $this->classMetadataFactory = $classMetadataFactory;
     }
 
     /**

@@ -41,7 +41,7 @@ final class OrderFilter extends AbstractFilter implements OrderFilterInterface
 {
     use OrderFilterTrait;
 
-    public function __construct(ManagerRegistry $managerRegistry, string $orderParameterName = 'order', LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
+    public function __construct(ManagerRegistry $managerRegistry, string $orderParameterName = 'order', LoggerInterface $logger = null, array $properties = null, NameConverterInterface $nameConverter = null)
     {
         if (null !== $properties) {
             $properties = array_map(static function ($propertyOptions) {
@@ -56,7 +56,7 @@ final class OrderFilter extends AbstractFilter implements OrderFilterInterface
             }, $properties);
         }
 
-        parent::__construct($managerRegistry, $logger, $properties, $nameConverter, $classMetadataFactory);
+        parent::__construct($managerRegistry, $logger, $properties, $nameConverter);
 
         $this->orderParameterName = $orderParameterName;
     }
@@ -77,7 +77,7 @@ final class OrderFilter extends AbstractFilter implements OrderFilterInterface
         }
 
         foreach ($context['filters'][$this->orderParameterName] as $property => $value) {
-            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass), $value, $aggregationBuilder, $resourceClass, $operationName, $context);
+            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass, $context), $value, $aggregationBuilder, $resourceClass, $operationName, $context);
         }
     }
 

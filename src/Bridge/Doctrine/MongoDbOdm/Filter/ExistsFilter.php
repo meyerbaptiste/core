@@ -41,9 +41,9 @@ final class ExistsFilter extends AbstractFilter implements ExistsFilterInterface
 {
     use ExistsFilterTrait;
 
-    public function __construct(ManagerRegistry $managerRegistry, LoggerInterface $logger = null, array $properties = null, string $existsParameterName = self::QUERY_PARAMETER_KEY, NameConverterInterface $nameConverter = null, ClassMetadataFactoryInterface $classMetadataFactory = null)
+    public function __construct(ManagerRegistry $managerRegistry, LoggerInterface $logger = null, array $properties = null, string $existsParameterName = self::QUERY_PARAMETER_KEY, NameConverterInterface $nameConverter = null)
     {
-        parent::__construct($managerRegistry, $logger, $properties, $nameConverter, $classMetadataFactory);
+        parent::__construct($managerRegistry, $logger, $properties, $nameConverter);
 
         $this->existsParameterName = $existsParameterName;
     }
@@ -61,7 +61,7 @@ final class ExistsFilter extends AbstractFilter implements ExistsFilterInterface
         }
 
         foreach ($context['filters'][$this->existsParameterName] as $property => $value) {
-            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass), $value, $aggregationBuilder, $resourceClass, $operationName, $context);
+            $this->filterProperty($this->denormalizePropertyName($property, $resourceClass, $context), $value, $aggregationBuilder, $resourceClass, $operationName, $context);
         }
     }
 
